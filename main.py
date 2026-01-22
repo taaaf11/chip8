@@ -2,17 +2,10 @@ import pygame
 
 pygame.init()
 
-# screen = pygame.display.set_mode((1280,720))
-# screen = pygame.display.set_mode((64 * 8, 32 * 8))
-screen = pygame.display.set_mode((64, 32))
+SCALE = 8
+screen = pygame.display.set_mode((64  * SCALE, 32  * SCALE))
 
 clock = pygame.time.Clock()
-
-instructions = 0x1011
-
-
-def predef_list(size):
-    return [0 for _ in range(size)]
 
 
 class Chip8:
@@ -54,20 +47,19 @@ class Chip8:
                     pygame.quit()
                     raise SystemExit
 
-            # Do logical updates here.
-            # ...
-
             self.exec_next_instruction()
-            
-            for y in range(len(self.display_array)):
-                for x in range(len(self.display_array[0])):
-                    if self.display_array[y][x] == 1:
-                        screen.set_at((x, y), (255, 255, 255))
-                    else:
-                        screen.set_at((x, y), (0,0,0))
-        
+
             # Render the graphics here.
-            # ...
+            # suggseted by chatgpt, to create a rect.
+            for y in range(32):
+                for x in range(64):
+                    color = (255, 255, 255) if self.display_array[y][x] else (0, 0, 0)
+                    pygame.draw.rect(
+                        screen,
+                        color,
+                        (x * SCALE, y * SCALE, SCALE, SCALE)
+                    )
+         
 
             pygame.display.flip()  # Refresh on-screen display
             clock.tick(60)         # wait until next frame (at 60 FPS)
