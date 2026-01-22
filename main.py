@@ -36,18 +36,6 @@ class Chip8:
             while value := f.read(1):
                 self.memory[i] = int(value[0])
                 i+=1
-                
-            
-            # while value := f.read(2):
-            #     first_byte = int(value[0])
-            #     second_byte = int(value[1])
-            #     # print(first_byte, second_byte)
-            #     first_byte = first_byte << 4
-            #     first_byte = first_byte | second_byte
-            #     # self.memory[i] = int(value)
-            #     self.memory[i] = first_byte
-            #     i += 1
-        print(self.memory[0x200:])
         
     def black_the_screen(self):
         # just create a new array and slap it into the variable
@@ -77,7 +65,6 @@ class Chip8:
                         screen.set_at((x, y), (255, 255, 255))
                     else:
                         screen.set_at((x, y), (0,0,0))
-                    # pygame.display.flip()
         
             # Render the graphics here.
             # ...
@@ -230,6 +217,87 @@ class Chip8:
                         X+=1
                         
                     Y += 1
+                    
+            case 0x8000:
+                vX = (instruction & 0x0F00) >> 8
+                vY = (instruction & 0x00F0) >> 4
+                last_nip = instruction & 0x000F
+                X = self.registers[vX]
+                Y = self.registers[vY]
+                self.program_counter += 2
+                # this instruction class contains arithmetic and
+                # logiical instructions:
+                
+                # 8XY1: Binary OR
+                # 8XY2: Binary AND
+                # 8XY3: Logical XOR
+                # 8XY4: Add etc.
+                
+                match last_nip:
+                    # set
+                    case 0x0:
+                        self.registers[vX] = self.registers[vY]
+                    
+                    # binary or
+                    case 0x1:
+                        self.registers[vX] |= self.registers[vY]
+                        
+                    # binary and
+                    case 0x2:
+                        self.registers[vX] &= self.registers[vY]
+                    
+                    # logical xor           
+                    case 0x3:
+                        self.registers[vX] ^= self.registers[vY]
+                        
+                    # add
+                    case 0x4:
+                        result = self.registers[vX] + self.registers[vY]
+                        result_bits = str(bin(result))[2:]
+                        # if overflow
+                        if len(result_bits) > 8:
+                            result_bits = result_bits[len(result_bits) - 8:]
+                            self.registers[-1] = 1
+                        result = int(result_bits)
+                        self.registers[vX] = result
+                    
+                    # vx = vx - vy
+                    case 0x5:
+                        result = self.registers[vX] - self.registers[vY]
+                        
+                        if self.registers[vX] > self.registers[vY]:
+                            self.registers[-1] = 1
+                        self.registers[vX] = result
+                        
+                    # vx = vy - vx
+                    case 0x7:
+                        result = self.registers[vY] - self.registers[vX]
+                        
+                        if self.registers[vY] > self.registers[vX]:
+                            self.registers[-1] = 1
+                        self.registers[vX] = result
+                        
+            case 0x8000:
+                vX = (instruction & 0x0F00) >> 8
+                vY = (instruction & 0x00F0) >> 4
+                last_nibble = (instruction & 0x000F)
+                self.program_counter += 2
+                
+                match last_nibble:
+                    case 0x6:
+                        bit_to_remove = self.registers[vX] & 0x01
+                        self.registers[vX] >>= 1
+                        self.registers[-1] = bit_to_remove
+                    case 0xE:
+                        bit_to_remove = self.registers[vX] & 0x80
+                        self.registers[vX] <<= 1
+                        self.registers[-1] = bit_to_remove
+            
+            case 0xA000:
+                value = instruction & 0x0FFF
+                self.index_register = value
+                self.program_counter += 2
+                
                     
     
         
